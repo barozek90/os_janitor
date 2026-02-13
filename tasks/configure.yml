@@ -1,0 +1,52 @@
+---
+# Deploy systemd service unit
+- name: Deploy systemd service unit
+  template:
+    src: os-janitor.service.j2
+    dest: /etc/systemd/system/os-janitor.service
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Reload systemd
+
+# Deploy systemd timer unit
+- name: Deploy systemd timer unit
+  template:
+    src: os-janitor.timer.j2
+    dest: /etc/systemd/system/os-janitor.timer
+    owner: root
+    group: root
+    mode: '0644'
+  notify: 
+    - Reload systemd
+    - Restart janitor timer
+
+# Enable and start timer ONLY on the first node of the control group
+- name: Enable and start Janitor timer (Primary Node Only)
+  systemd:
+    name: os-janitor.timer
+    state: started
+    enabled: yes
+  when: inventory_hostname == groups[os_janitor_control_group][0]
+
+# Stop and disable timer on other nodes (Secondary Nodes) to prevent conflicts
+- name: Disable Janitor timer (Secondary Nodes)
+  systemd:
+    name: os-janitor.timer
+    state: stopped
+    enabled: no
+  when: 
+    - inventory_hostname != groups[os_janitor_control_group][0]
+    - inventory_hostname in groups[os_janitor_control_group]
+
+# Optional: Run immediately if requested
+- name: Run Janitor immediately (Manual Trigger)
+  command: "{{ os_janitor_script_path }} --{{ os_janitor_run_target }}"
+  when: os_janitor_run_now | bool and inventory_hostname == groups[os_janitor_control_group][0]
+  register: janitor_run_output
+  ignore_errors: yes
+
+- name: Display Janitor output
+  debug:
+    var: janitor_run_output.stdout_lines
+  when: os_janitor_run_now | bool and inventory_hostname == groups[os_janitor_control_group][0]

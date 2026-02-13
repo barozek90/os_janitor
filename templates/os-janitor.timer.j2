@@ -1,0 +1,10 @@
+[Unit]
+Description=Trigger OpenStack Database Cleaner (Janitor)
+
+[Timer]
+OnCalendar={{ os_janitor_schedule }}
+Persistent=true
+Unit=os-janitor.service
+
+[Install]
+WantedBy=timers.target
