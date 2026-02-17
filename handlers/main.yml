@@ -1,10 +1,10 @@
 ---
 - name: Reload systemd
-  systemd:
-    daemon_reload: yes
+  ansible.builtin.systemd:
+    daemon_reload: true
 
 - name: Restart janitor timer
-  systemd:
+  ansible.builtin.systemd:
     name: os-janitor.timer
     state: restarted
-    enabled: yes
+    enabled: true
