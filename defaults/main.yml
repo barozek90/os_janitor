@@ -5,9 +5,6 @@ os_janitor_schedule: "*-*-* 03:00:00"  # Codziennie o 3:00
 os_janitor_log_dir: "/var/log/openstack-janitor"
 os_janitor_script_path: "/usr/local/bin/openstack-janitor.sh"
 
-# Grupa Ansible, na której wdrożyć Janitora (zazwyczaj kontrolery OpenStacka)
-os_janitor_control_group: "control"
-
 # Parametry dla Novy
 os_janitor_max_rows: 1000
 
@@ -15,6 +12,7 @@ os_janitor_max_rows: 1000
 os_janitor_max_stacks: 10
 
 # Mapowanie komponentów na kontenery i komendy
+# 'group': Nazwa grupy Ansible, której pierwszy węzeł będzie wykonywał czyszczenie (HA).
 # 'cmd': Komenda do wykonania wewnątrz kontenera.
 # Placeholder __DAYS__ zostanie podmieniony na liczbę dni.
 # Placeholder __DATE_LIMIT__ zostanie podmieniony na datę (format YYYY-MM-DD) wyliczoną z retencji.
@@ -22,28 +20,34 @@ os_janitor_max_stacks: 10
 # os_janitor_enable_ + nazwa_kompotnentu ie. os_janitor_enable_nova_api=true
 os_janitor_components_map:
   nova_api:
+    group: "control"
     container: "nova_api"
     cmds:
       - "nova-manage db archive_deleted_rows --max_rows {{ os_janitor_max_rows }} --until-complete --verbose"
       - "nova-manage db purge --before __DATE_LIMIT__ --verbose"
   nova_conductor:
+    group: "control"
     container: "nova_conductor"
     cmds:
       - "nova-manage db archive_deleted_rows --max_rows {{ os_janitor_max_rows }} --until-complete --verbose"
       - "nova-manage db purge --before __DATE_LIMIT__ --verbose"
   cinder:
+    group: "control"
     container: "cinder_api"
     cmds:
       - "cinder-manage db purge __DAYS__"
   heat:
+    group: "control"
     container: "heat_api"
     cmds:
       - "heat-manage purge_deleted -b {{ os_janitor_max_stacks }} __DAYS__"
   glance:
+    group: "control"
     container: "glance_api"
     cmds:
       - "glance-manage db purge --age_in_days __DAYS__ --max_rows {{ os_janitor_max_rows }}"
   masakari:
+    group: "control"
     container: "masakari_api"
     cmds:
       - "masakari-manage db purge --age_in_days __DAYS__ --max_rows {{ os_janitor_max_rows }}"

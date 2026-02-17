@@ -5,6 +5,9 @@
 #
 # Usage: $0 [--all | --component_name]
 #
+# Generated for host: {{ inventory_hostname }}
+# Only cleanups assigned to this host (first node of defined group) will be executed.
+#
 
 LOG_FILE="{{ os_janitor_log_dir }}/janitor.log"
 RETENTION_DAYS="{{ os_janitor_retention_days }}"
@@ -27,8 +30,9 @@ check_container() {
     return 0
 }
 
+# --- Cleanup Functions ---
 {% for component, details in os_janitor_components_map.items() %}
-{% set is_enabled = hostvars[inventory_hostname]['os_janitor_enable_' + component] | default(false) | bool %}
+{% set is_enabled = hostvars[inventory_hostname].get('os_janitor_enable_' + component, False) | bool %}
 {% if is_enabled %}
 clean_{{ component }}() {
     local container="{{ details.container }}"
@@ -60,9 +64,9 @@ clean_{{ component }}() {
 usage() {
     echo "Usage: $0 [--all] [component_flags]"
     echo "Available flags:"
-    echo "  --all : Run cleanup for enabled components"
+    echo "  --all : Run cleanup for all enabled components assigned to this host"
     {% for component in os_janitor_components_map.keys() %}
-    {% set is_enabled = hostvars[inventory_hostname]['os_janitor_enable_' + component] | default(false) | bool %}
+    {% set is_enabled = hostvars[inventory_hostname].get('os_janitor_enable_' + component, False) | bool %}
     {% if is_enabled %}
     echo "  --{{ component }} : Run cleanup for {{ component }}"
     {% endif %}
@@ -78,16 +82,24 @@ fi
 while [[ $# -gt 0 ]]; do
     case "$1" in
         --all)
-            {% for component in os_janitor_components_map.keys() %}
-            {% set is_enabled = hostvars[inventory_hostname]['os_janitor_enable_' + component] | default(false) | bool %}
+            log "START: Running ALL assigned cleanups for this host"
+            {% for component, details in os_janitor_components_map.items() %}
+            {% set is_enabled = hostvars[inventory_hostname].get('os_janitor_enable_' + component, False) | bool %}
+            {% set group_name = details.group | default('control') %}
             {% if is_enabled %}
+            # Check HA assignment for {{ component }} (Group: {{ group_name }})
+            {% if group_name in groups and inventory_hostname in groups[group_name] and inventory_hostname == groups[group_name][0] %}
             clean_{{ component }}
+            {% else %}
+            # Skipped: This host is not the primary node for group '{{ group_name }}'
+            {% endif %}
             {% endif %}
             {% endfor %}
+            log "END: Finished ALL assigned cleanups"
             shift
             ;;
-        {% for component in os_janitor_components_map.keys() %}
-        {% set is_enabled = hostvars[inventory_hostname]['os_janitor_enable_' + component] | default(false) | bool %}
+        {% for component, details in os_janitor_components_map.items() %}
+        {% set is_enabled = hostvars[inventory_hostname].get('os_janitor_enable_' + component, False) | bool %}
         {% if is_enabled %}
         --{{ component }})
             clean_{{ component }}

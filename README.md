@@ -8,7 +8,7 @@ This role installs a systemd timer and service that periodically runs cleanup co
 
 *   **Supported Services:** Nova (API & Conductor), Cinder, Heat, Glance, Masakari.
 *   **Secure by Default:** All cleaners are disabled by default. You must explicitly enable them using `os_janitor_enable_<component>: true`.
-*   **HA Safe:** The cleanup job runs only on **one node** of the control plane (the first node in the specified group) to avoid database locks and race conditions, even if the role is applied to all controllers.
+*   **Intelligent HA:** The role automatically ensures that cleanup jobs run on only **one node** per component (the first node in the defined inventory group). You can safely deploy this role to all controllers; the script will only execute actions on the designated primary node for each service.
 *   **Logging:** Detailed execution logs are stored in `/var/log/openstack-janitor/janitor.log`.
 *   **Configurable:** Full control over retention period, schedule, and batch sizes.
 
@@ -26,11 +26,22 @@ The following variables can be configured. See `defaults/main.yml` for the full 
 |----------|---------|-------------|
 | `os_janitor_retention_days` | `90` | Number of days to keep deleted data. Data older than this will be purged. |
 | `os_janitor_schedule` | `"*-*-* 03:00:00"` | Systemd OnCalendar schedule format. Default is daily at 3:00 AM. |
-| `os_janitor_control_group` | `"control"` | The Ansible inventory group name for your control plane nodes. **Must match your inventory.** |
 | `os_janitor_max_rows` | `1000` | Batch size for row deletion (prevents DB locks). Used by Nova, Glance, Masakari. |
 | `os_janitor_max_stacks` | `10` | Batch size for Heat stack purging. |
 | `os_janitor_log_dir` | `/var/log/openstack-janitor` | Directory for execution logs. |
 | `os_janitor_run_now` | `false` | If `true`, runs the janitor immediately after deployment (useful for testing). |
+
+### Component Configuration & HA Groups
+
+You can customize which inventory group is responsible for cleaning each component in `os_janitor_components_map` (in `defaults/main.yml`). By default, all components use the `control` group.
+
+Example override:
+```yaml
+os_janitor_components_map:
+  nova_api:
+    group: "nova-api" # Cleanup will run on groups['nova-api'][0]
+    ...
+```
 
 ### Enabling Components
 
@@ -62,13 +73,12 @@ None.
         os_janitor_schedule: "Sun *-*-* 02:00:00"
         
         # Enable specific components
+        # The role will automatically pick the first node in the 'control' group 
+        # to execute these tasks, ensuring HA safety.
         os_janitor_enable_nova_api: true
         os_janitor_enable_nova_conductor: true
         os_janitor_enable_cinder: true
         os_janitor_enable_glance: true
-        
-        # Keep Heat and Masakari disabled (implicit default)
-        # os_janitor_enable_heat: false
 ```
 
 ## License
