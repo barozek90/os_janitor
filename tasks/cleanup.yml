@@ -1,0 +1,39 @@
+---
+- name: Stop and disable Janitor timer
+  ansible.builtin.systemd:
+    name: os-janitor.timer
+    state: stopped
+    enabled: false
+  ignore_errors: true
+
+- name: Stop and disable Janitor service
+  ansible.builtin.systemd:
+    name: os-janitor.service
+    state: stopped
+    enabled: false
+  ignore_errors: true
+
+- name: Remove systemd timer unit
+  ansible.builtin.file:
+    path: /etc/systemd/system/os-janitor.timer
+    state: absent
+  notify: Reload systemd
+
+- name: Remove systemd service unit
+  ansible.builtin.file:
+    path: /etc/systemd/system/os-janitor.service
+    state: absent
+  notify: Reload systemd
+
+- name: Remove OpenStack Janitor script
+  ansible.builtin.file:
+    path: "{{ os_janitor_script_path }}"
+    state: absent
+
+- name: Remove Janitor log directory
+  ansible.builtin.file:
+    path: "{{ os_janitor_log_dir }}"
+    state: absent
+
+- name: Force systemd reload to apply changes
+  ansible.builtin.meta: flush_handlers

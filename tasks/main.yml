@@ -34,10 +34,17 @@
       - "Role Enabled: {{ _os_janitor_any_enabled | bool }}"
       - "Active on this host (HA): {{ _os_janitor_active_on_host | bool }}"
 
-- name: Deploy Janitor script and configuration
+- name: Clean up Janitor installation (if disabled)
+  block:
+    - name: Import cleanup tasks
+      ansible.builtin.import_tasks: cleanup.yml
+  when: not (_os_janitor_any_enabled | bool)
+
+- name: Deploy Janitor script and configuration (if enabled)
   block:
     - name: Import deployment script tasks
       ansible.builtin.import_tasks: deploy_script.yml
     - name: Import deployment timer tasks
       ansible.builtin.import_tasks: deploy_timers.yml
   when: _os_janitor_any_enabled | bool
+
