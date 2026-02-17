@@ -1,11 +1,12 @@
 galaxy_info:
-  author: barozek90
-  description: OpenStack Database Janitor - Automated database cleanup (purging) for Nova, Cinder, Heat, Glance, Keystone, Octavia, Designate, Trove, Magnum, and Placement.
+  author: barozek
+  description: OpenStack Database Janitor - Automated database cleanup (purging) for Nova, Cinder, Heat, Glance, Masakari.
   company: ""
   license: MIT
   min_ansible_version: "2.9"
   role_name: os_janitor
   github_branch: main
+  namespace: barozek
   
   platforms:
     - name: Ubuntu
@@ -28,6 +29,10 @@ galaxy_info:
     - cleanup
     - janitor
     - purge
-    - operations
+    - nova
+    - cinder
+    - heat
+    - glance
+    - masakari
 
 dependencies: []
