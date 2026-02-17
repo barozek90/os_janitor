@@ -1,6 +1,6 @@
 ---
 # Konfiguracja retencji i harmonogramu
-os_janitor_retention_days: 30
+os_janitor_retention_days: 90
 os_janitor_schedule: "*-*-* 03:00:00"  # Codziennie o 3:00
 os_janitor_log_dir: "/var/log/openstack-janitor"
 os_janitor_script_path: "/usr/local/bin/openstack-janitor.sh"
@@ -9,31 +9,26 @@ os_janitor_script_path: "/usr/local/bin/openstack-janitor.sh"
 os_janitor_control_group: "control"
 
 # Parametry dla Novy
-os_janitor_nova_max_rows: 1000
+os_janitor_max_rows: 1000
 
-# Flagi włączające poszczególne komponenty (domyślnie wszystkie wyłączone - secure by default)
-# Musisz je nadpisać w group_vars/all.yml lub dla konkretnych grup
-os_janitor_enable_nova: false
-os_janitor_enable_cinder: false
-os_janitor_enable_heat: false
-os_janitor_enable_glance: false
-os_janitor_enable_keystone: false
-os_janitor_enable_octavia: false
-os_janitor_enable_designate: false
-os_janitor_enable_trove: false
-os_janitor_enable_magnum: false
-os_janitor_enable_placement: false
+# Parametry dla Heat
+os_janitor_max_stacks: 10
 
 # Mapowanie komponentów na kontenery i komendy
 # 'cmd': Komenda do wykonania wewnątrz kontenera.
 # Placeholder __DAYS__ zostanie podmieniony na liczbę dni.
 # Placeholder __DATE_LIMIT__ zostanie podmieniony na datę (format YYYY-MM-DD) wyliczoną z retencji.
+# Aby odblokować clenaera dla danego komponentu należy ustawić odpowiednią flagę w formacie os_janitor_enable_ + nazwa_kompotnentu ie. os_janitor_enable_nova_api=true
 os_janitor_components_map:
-  nova:
+  nova_api:
     container: "nova_api"
-    # Nova wymaga dwuetapowego czyszczenia: archiwizacja -> purge
     cmds:
-      - "nova-manage db archive_deleted_rows --max_rows {{ os_janitor_nova_max_rows }} --until-complete --verbose"
+      - "nova-manage db archive_deleted_rows --max_rows {{ os_janitor_max_rows }} --until-complete --verbose"
+      - "nova-manage db purge --before __DATE_LIMIT__ --verbose"
+  nova_conductor:
+    container: "nova_conductor"
+    cmds:
+      - "nova-manage db archive_deleted_rows --max_rows {{ os_janitor_max_rows }} --until-complete --verbose"
       - "nova-manage db purge --before __DATE_LIMIT__ --verbose"
   cinder:
     container: "cinder_api"
@@ -42,35 +37,11 @@ os_janitor_components_map:
   heat:
     container: "heat_api"
     cmds:
-      - "heat-manage purge_deleted __DAYS__"
+      - "heat-manage purge_deleted -b {{ os_janitor_max_stacks }} __DAYS__"
   glance:
     container: "glance_api"
     cmds:
-      - "glance-manage db purge --age_in_days __DAYS__"
-  keystone:
-    container: "keystone"
-    cmds:
-      - "keystone-manage db_purge --date __DATE_LIMIT__"
-  octavia:
-    container: "octavia_api"
-    cmds:
-      - "octavia-db-manage purge_deleted --days __DAYS__"
-  designate:
-    container: "designate_api"
-    cmds:
-      - "designate-manage database purge --days __DAYS__"
-  trove:
-    container: "trove_api"
-    cmds:
-      - "trove-manage db_purge --days __DAYS__"
-  magnum:
-    container: "magnum_api"
-    cmds:
-      - "magnum-db-manage purge __DAYS__"
-  placement:
-    container: "placement_api"
-    cmds:
-      - "placement-manage db purge --before __DATE_LIMIT__"
+      - "glance-manage db purge --age_in_days __DAYS__ --max_rows {{ os_janitor_max_rows }}"
 
 # Opcja pozwalająca na uruchomienie skryptu natychmiast po wdrożeniu (np. do testów)
 os_janitor_run_now: false
