@@ -42,6 +42,10 @@ os_janitor_components_map:
     container: "glance_api"
     cmds:
       - "glance-manage db purge --age_in_days __DAYS__ --max_rows {{ os_janitor_max_rows }}"
+  masakari:
+    container: "masakari_api"
+    cmds:
+      - "masakari-manage db purge --age_in_days __DAYS__ --max_rows {{ os_janitor_max_rows }}"
 
 # Opcja pozwalająca na uruchomienie skryptu natychmiast po wdrożeniu (np. do testów)
 os_janitor_run_now: false
