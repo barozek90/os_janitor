@@ -5,13 +5,13 @@
 - name: Determine if any Janitor component is enabled
   ansible.builtin.set_fact:
     _os_janitor_any_enabled: >-
-      {% set ns = namespace(enabled=false) %}
-      {% for component in os_janitor_components_map.keys() %}
-        {% set var_name = 'os_janitor_enable_' + component %}
-        {% if hostvars[inventory_hostname].get(var_name, False) | bool %}
-          {% set ns.enabled = true %}
-        {% endif %}
-      {% endfor %}
+      {%- set ns = namespace(enabled=false) -%}
+      {%- for component in os_janitor_components_map.keys() -%}
+        {%- set var_name = 'os_janitor_enable_' + component -%}
+        {%- if hostvars[inventory_hostname].get(var_name, False) | bool -%}
+          {%- set ns.enabled = true -%}
+        {%- endif -%}
+      {%- endfor -%}
       {{ ns.enabled }}
 
 - name: Display Janitor status
