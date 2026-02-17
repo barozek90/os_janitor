@@ -1,4 +1,4 @@
 ---
 # Main task file for OpenStack Janitor
 - import_tasks: deploy_script.yml
-#- import_tasks: deploy_timers.yml
+- import_tasks: deploy_timers.yml
