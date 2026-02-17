@@ -2,8 +2,9 @@
 # Main task file for OpenStack Janitor
 # Checks if at least one component is enabled before proceeding
 
-- name: Determine if any Janitor component is enabled
+- name: Determine Janitor status on this host
   ansible.builtin.set_fact:
+    # Check if any component is enabled (to decide if role tasks should run)
     _os_janitor_any_enabled: >-
       {%- set ns = namespace(enabled=false) -%}
       {%- for component in os_janitor_components_map.keys() -%}
@@ -14,9 +15,24 @@
       {%- endfor -%}
       {{ ns.enabled }}
 
+    # Check if THIS host is the primary node for any enabled component (HA logic)
+    _os_janitor_active_on_host: >-
+      {%- set ns = namespace(active=false) -%}
+      {%- for component, details in os_janitor_components_map.items() -%}
+        {%- set var_name = 'os_janitor_enable_' + component -%}
+        {%- set is_enabled = hostvars[inventory_hostname].get(var_name, False) | bool -%}
+        {%- set group_name = details.group | default('control') -%}
+        {%- if is_enabled and group_name in groups and inventory_hostname == groups[group_name][0] -%}
+          {%- set ns.active = true -%}
+        {%- endif -%}
+      {%- endfor -%}
+      {{ ns.active }}
+
 - name: Display Janitor status
   ansible.builtin.debug:
-    msg: "OpenStack Janitor enabled: {{ _os_janitor_any_enabled | bool }}. (Set 'os_janitor_enable_<component>: true' to enable)"
+    msg: 
+      - "Role Enabled: {{ _os_janitor_any_enabled | bool }}"
+      - "Active on this host (HA): {{ _os_janitor_active_on_host | bool }}"
 
 - name: Deploy Janitor script and configuration
   block:

@@ -21,17 +21,28 @@
     - Reload systemd
     - Restart janitor timer
 
-# Enable and start timer
+# Enable and start timer (HA Active)
 - name: Enable and start Janitor timer
   ansible.builtin.systemd:
     name: os-janitor.timer
     state: started
     enabled: true
+  when: _os_janitor_active_on_host | bool
 
-# Optional: Run immediately if requested
+# Stop and disable timer on non-primary nodes
+- name: Disable Janitor timer (Non-Primary Node)
+  ansible.builtin.systemd:
+    name: os-janitor.timer
+    state: stopped
+    enabled: false
+  when: not (_os_janitor_active_on_host | bool)
+
+# Optional: Run immediately if requested and active
 - name: Run Janitor immediately (Manual Trigger)
   ansible.builtin.command: "{{ os_janitor_script_path }} --{{ os_janitor_run_target }}"
-  when: os_janitor_run_now | bool
+  when: 
+    - os_janitor_run_now | bool
+    - _os_janitor_active_on_host | bool
   register: janitor_run_output
   ignore_errors: true
   changed_when: true
@@ -39,4 +50,6 @@
 - name: Display Janitor output
   ansible.builtin.debug:
     var: janitor_run_output.stdout_lines
-  when: os_janitor_run_now | bool
+  when: 
+    - os_janitor_run_now | bool
+    - _os_janitor_active_on_host | bool
