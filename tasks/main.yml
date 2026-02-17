@@ -16,7 +16,7 @@
 
 - name: Display Janitor status
   ansible.builtin.debug:
-    msg: "OpenStack Janitor enabled: {{ _os_janitor_any_enabled }}. (Set 'os_janitor_enable_<component>: true' to enable)"
+    msg: "OpenStack Janitor enabled: {{ _os_janitor_any_enabled | bool }}. (Set 'os_janitor_enable_<component>: true' to enable)"
 
 - name: Deploy Janitor script and configuration
   block:
