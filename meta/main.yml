@@ -5,8 +5,8 @@ galaxy_info:
   license: MIT
   min_ansible_version: "2.9"
   role_name: os_janitor
-  github_branch: main
-  namespace: barozek
+  github_branch: v1.0.4
+  namespace: barozek90
 
   platforms:
     - name: Ubuntu
