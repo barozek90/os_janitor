@@ -3,7 +3,7 @@
 # Checks if at least one component is enabled before proceeding
 
 - name: Determine if any Janitor component is enabled
-  set_fact:
+  ansible.builtin.set_fact:
     _os_janitor_any_enabled: >-
       {{
         os_janitor_components_map.keys() |
@@ -16,11 +16,13 @@
       }}
 
 - name: Display Janitor status
-  debug:
+  ansible.builtin.debug:
     msg: "OpenStack Janitor enabled: {{ _os_janitor_any_enabled }}. (Set 'os_janitor_enable_<component>: true' to enable)"
 
 - name: Deploy Janitor script and configuration
   block:
-    - import_tasks: deploy_script.yml
-    - import_tasks: deploy_timers.yml
+    - name: Import deployment script tasks
+      ansible.builtin.import_tasks: deploy_script.yml
+    - name: Import deployment timer tasks
+      ansible.builtin.import_tasks: deploy_timers.yml
   when: _os_janitor_any_enabled | bool

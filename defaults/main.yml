@@ -18,7 +18,8 @@ os_janitor_max_stacks: 10
 # 'cmd': Komenda do wykonania wewnątrz kontenera.
 # Placeholder __DAYS__ zostanie podmieniony na liczbę dni.
 # Placeholder __DATE_LIMIT__ zostanie podmieniony na datę (format YYYY-MM-DD) wyliczoną z retencji.
-# Aby odblokować clenaera dla danego komponentu należy ustawić odpowiednią flagę w formacie os_janitor_enable_ + nazwa_kompotnentu ie. os_janitor_enable_nova_api=true
+# Aby odblokować clenaera dla danego komponentu należy ustawić odpowiednią flagę w formacie
+# os_janitor_enable_ + nazwa_kompotnentu ie. os_janitor_enable_nova_api=true
 os_janitor_components_map:
   nova_api:
     container: "nova_api"

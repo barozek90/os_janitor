@@ -1,7 +1,7 @@
 ---
 # Ensure log directory exists
 - name: Ensure log directory for Janitor exists
-  file:
+  ansible.builtin.file:
     path: "{{ os_janitor_log_dir }}"
     state: directory
     owner: root
@@ -10,11 +10,10 @@
 
 # Deploy the main janitor script
 - name: Deploy OpenStack Janitor script
-  template:
+  ansible.builtin.template:
     src: "openstack-janitor.sh.j2"
     dest: "{{ os_janitor_script_path }}"
     owner: root
     group: root
     mode: '0755'
   notify: Restart janitor timer
-  

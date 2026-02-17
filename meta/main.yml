@@ -7,7 +7,7 @@ galaxy_info:
   role_name: os_janitor
   github_branch: main
   namespace: barozek
-  
+
   platforms:
     - name: Ubuntu
       versions:
